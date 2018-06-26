@@ -21,10 +21,15 @@ function Collect-Names {
     return $names
 }
 
+# Like Get-ChildItem -Recurs, but also excludes subdirectories that match
+# the exclude filter.
 function Get-Descendants($Path, $Filter, $Exclude) {
     $children = Get-ChildItem -Path $Path | Where-Object {$_.Name -notlike $Exclude}
     $children | Where-Object {$_.Name -like $Filter }
-    $children | Where-Object { Test-Path -PathType Container $_.FullName} | Get-Descendants
+    $childDirs = $children | Where-Object { Test-Path -PathType Container $_.FullName}
+    foreach ($childDir in $childDirs) {
+        Get-Descendants -Path $childDir.FullName -Filter $Filter -Exclude $Exclude
+    }
 }
 
 Push-Location
