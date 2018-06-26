@@ -21,11 +21,17 @@ function Collect-Names {
     return $names
 }
 
+function Get-Descendants($Path, $Filter, $Exclude) {
+    $children = Get-ChildItem -Path $Path | Where-Object {$_.Name -notlike $Exclude}
+    $children | Where-Object {$_.Name -like $Filter }
+    $children | Where-Object { Test-Path -PathType Container $_.FullName} | Get-Descendants
+}
+
 Push-Location
 try {
     Set-Location ..
-    $packageJsons = Get-ChildItem -Recurse package.json
-    $testDirs = Get-ChildItem -Recurse *test | Where-Object { Test-Path -Path $_ -PathType Container}
+    $packageJsons = Get-Descendants -Path . -Filter package.json -Exclude node_modules
+    $testDirs = Get-Descendants -Path . -Filter *test -Exclude node_modules | Where-Object { Test-Path -Path $_ -PathType Container}
     $names = ($packageJsons + $testDirs | Collect-Names)
 } finally {
     Pop-Location
